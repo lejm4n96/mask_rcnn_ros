@@ -44,10 +44,9 @@ import numpy as np
 import zipfile
 from six.moves.urllib import request
 import shutil
-
-from config import Config
-import utils
-import model as modellib
+from .config import Config
+import mask_rcnn_ros.utils as utils
+import mask_rcnn_ros.model as modellib
 
 # Root directory of the project
 ROOT_DIR = os.path.dirname(__file__)

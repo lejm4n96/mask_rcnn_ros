@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import os
 import threading
-from Queue import Queue
 import numpy as np
 
 import cv2
@@ -10,13 +9,13 @@ import rospy
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import RegionOfInterest
 from std_msgs.msg import UInt8MultiArray
+from std_msgs.msg import String
 
 from mask_rcnn_ros import coco
 from mask_rcnn_ros import utils
 from mask_rcnn_ros import model as modellib
 from mask_rcnn_ros import visualize
 from mask_rcnn_ros.msg import Result
-
 
 # Local path to trained weights file
 ROS_HOME = os.environ.get('ROS_HOME', os.path.join(os.environ['HOME'], '.ros'))
@@ -52,16 +51,22 @@ class MaskRCNNNode(object):
     def __init__(self):
         self._cv_bridge = CvBridge()
 
+        cameraNode = rospy.get_param('~input','/no_camera_node')
+        if len(cameraNode) == 0 or cameraNode == '/no_camera_node':
+            rospy.logerr("No Camera node inputted")
+            exit(1)
+            
         config = InferenceConfig()
         config.display()
 
         self._visualization = rospy.get_param('~visualization', True)
 
+
         # Create model object in inference mode.
         self._model = modellib.MaskRCNN(mode="inference", model_dir="",
                                         config=config)
         # Load weights trained on MS-COCO
-        model_path = rospy.get_param('~model_path', COCO_MODEL_PATH)
+        model_path = rospy.get_param('~weight_location', COCO_MODEL_PATH)
         # Download COCO trained weights from Releases if needed
         if model_path == COCO_MODEL_PATH and not os.path.exists(COCO_MODEL_PATH):
             utils.download_trained_weights(COCO_MODEL_PATH)
@@ -79,8 +84,15 @@ class MaskRCNNNode(object):
 
     def run(self):
         self._result_pub = rospy.Publisher('~result', Result, queue_size=1)
+        self._result_count_pub =  rospy.Publisher('~result_count',String,queue_size=1)
         vis_pub = rospy.Publisher('~visualization', Image, queue_size=1)
-        sub = rospy.Subscriber('~input', Image,
+        cameraNode = rospy.get_param("~input","/no_camera_node")
+        if len(cameraNode) == 0 or cameraNode == '/no_camera_node':
+            rospy.logerr("No Camera node inputted")
+            exit(1)
+        else :
+            rospy.loginfo("Camera node is on "+ cameraNode)
+        sub = rospy.Subscriber(cameraNode, Image,
                                self._image_callback, queue_size=1)
 
         rate = rospy.Rate(self._publish_rate)
@@ -142,6 +154,16 @@ class MaskRCNNNode(object):
             mask.data = (result['masks'][:, :, i] * 255).tobytes()
             result_msg.masks.append(mask)
         return result_msg
+    
+    def _build_result_count(self,args):
+        (unique,count) = args 
+        result_msg = String()
+        result_str = ""
+        
+        for i in np.asarray([unique,count]).transpose():
+            result_str += "Count of "+ str(CLASS_NAMES[i[0]])+ " is "+ str(count[i[1]])+"."
+        result_msg.data = result_str 
+        return result_msg
 
     def _visualize(self, result, image):
         from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -150,11 +172,13 @@ class MaskRCNNNode(object):
         fig = Figure()
         canvas = FigureCanvasAgg(fig)
         axes = fig.gca()
-        visualize.display_instances(image, result['rois'], result['masks'],
+        counts = visualize.display_instances(image, result['rois'], result['masks'],
                                     result['class_ids'], CLASS_NAMES,
                                     result['scores'], ax=axes,
                                     class_colors=self._class_colors)
         fig.tight_layout()
+        self._result_count_pub.publish(self._build_result_count(counts))
+        
         canvas.draw()
         result = np.fromstring(canvas.tostring_rgb(), dtype='uint8')
 

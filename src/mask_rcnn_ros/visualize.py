@@ -18,7 +18,7 @@ import matplotlib.lines as lines
 from matplotlib.patches import Polygon
 import IPython.display
 
-import utils
+import mask_rcnn_ros.utils
 
 
 ############################################################
@@ -85,6 +85,7 @@ def display_instances(image, boxes, masks, class_ids, class_names,
     figsize: (optional) the size of the image.
     """
     # Number of instances
+    unique, counts = np.unique(class_ids, return_counts=True)
     N = boxes.shape[0]
     if not N:
         print("\n*** No instances to display *** \n")
@@ -147,6 +148,7 @@ def display_instances(image, boxes, masks, class_ids, class_names,
             p = Polygon(verts, facecolor="none", edgecolor=color)
             ax.add_patch(p)
     ax.imshow(masked_image.astype(np.uint8))
+    return (unique,counts) #return count of each class items
     #plt.show()
 
 
