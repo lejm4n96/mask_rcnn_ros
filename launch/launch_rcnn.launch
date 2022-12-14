@@ -1,15 +1,14 @@
 <launch>
 
   <!-- these are the arguments you can pass this launch file, for example paused:=true -->
-  <arg name="cameraTopic" default="/camera/color/image_raw"/>
+  <arg name="cameraTopic" default="/camera/rgb/image_color"/>
 
-  <arg name="weight_location" default="/home/zoro/catkin_ws/src/mask_rcnn_ros/weights/mask_rcnn_coco.h5"/>
+  <arg name="weight_location" default="/root/.ros/mask_rcnn_coco.h5"/>
   
   <node name="mask_rcnn_node" pkg="mask_rcnn_ros" type="mask_rcnn_node.py" respawn="true" output="screen">
     <param name="~weight_location" value="$(arg weight_location)"/>
     <param name="~input" value="$(arg cameraTopic)"/>
   </node>
-
-  <node name="rviz" pkg="rviz" type="rviz" required="true" />
+  
 </launch>
 
