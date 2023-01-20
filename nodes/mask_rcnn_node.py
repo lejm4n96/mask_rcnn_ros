@@ -11,9 +11,9 @@ from sensor_msgs.msg import RegionOfInterest
 from std_msgs.msg import UInt8MultiArray
 from std_msgs.msg import String
 
-from mask_rcnn_ros.config import Config
-from mask_rcnn_ros import model as modellib, utils
-from mask_rcnn_ros import visualize
+from mask_rcnn_ros.mrcnn.config import Config
+from mask_rcnn_ros.mrcnn import model as modellib
+from mask_rcnn_ros.mrcnn import visualize
 from mask_rcnn_ros.msg import Result
 
 # Local path to trained weights file
