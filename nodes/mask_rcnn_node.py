@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import os
 import threading
 import numpy as np
 import resource_retriever
@@ -9,8 +8,6 @@ from cv_bridge import CvBridge
 import rospy
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import RegionOfInterest
-from std_msgs.msg import UInt8MultiArray
-from std_msgs.msg import String
 
 from mask_rcnn_ros.mrcnn.config import Config
 from mask_rcnn_ros.mrcnn import model as modellib
