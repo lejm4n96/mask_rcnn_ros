@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(mask_rcnn_ros)
 
-find_package(catkin REQUIRED COMPONENTS std_msgs sensor_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS std_msgs sensor_msgs message_generation resource_retriever)
 
 catkin_python_setup()
 
