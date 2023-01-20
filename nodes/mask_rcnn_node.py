@@ -149,7 +149,7 @@ class MaskRCNNNode(object):
         visualize.display_instances(image, result['rois'], result['masks'],
                                     result['class_ids'], self._class_names,
                                     result['scores'], ax=axes,
-                                    class_colors=self._class_colors)
+                                    colors=self._class_colors)
         fig.tight_layout()
         canvas.draw()
         result = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
