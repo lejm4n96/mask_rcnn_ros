@@ -53,6 +53,30 @@ class MaskRCNNNode(object):
 
         self._publish_rate = rospy.get_param('~publish_rate', 100)
 
+        # Start ROS publishers
+        self._result_pub = \
+            rospy.Publisher(
+                rospy.get_param('~topic_publishing') + "/result",
+                Result,
+                queue_size=1
+        )
+
+        self._vis_pub = \
+            rospy.Publisher(
+                rospy.get_param('~topic_publishing') + "/visualization",
+                Image,
+                queue_size=1
+        )
+
+        # Start ROS subscriber
+        image_sub = rospy.Subscriber(
+            '~cameraTopic',
+            Image, 
+            self._image_callback,
+            queue_size=1
+        )
+
+        rospy.loginfo("Running Mask-RCNN...  (Listening to camera topic: '{}')".format(image_sub.name))
 
     def run(self):
         rate = rospy.Rate(self._publish_rate)
@@ -80,7 +104,7 @@ class MaskRCNNNode(object):
                     cv_result = np.zeros(shape=vis_image.shape, dtype=np.uint8)
                     cv2.convertScaleAbs(vis_image, cv_result)
                     image_msg = self._cv_bridge.cv2_to_imgmsg(cv_result, 'bgr8')
-                    vis_pub.publish(image_msg)
+                    self._vis_pub.publish(image_msg)
 
             rate.sleep()
 
