@@ -44,12 +44,12 @@ class MaskRCNNNode(object):
         self._model.load_weights(model_path, by_name=True)
         rospy.loginfo("Successfully loaded pretrained model into memory")
 
-        self._class_names = rospy.get_param('~class_names', CLASS_NAMES)
+        self._class_names = rospy.get_param('~class_names')
 
         self._last_msg = None
         self._msg_lock = threading.Lock()
 
-        self._class_colors = visualize.random_colors(len(CLASS_NAMES))
+        self._class_colors = visualize.random_colors(len(self._class_names))
 
         self._publish_rate = rospy.get_param('~publish_rate', 100)
 
@@ -147,7 +147,7 @@ class MaskRCNNNode(object):
         canvas = FigureCanvasAgg(fig)
         axes = fig.gca()
         visualize.display_instances(image, result['rois'], result['masks'],
-                                    result['class_ids'], CLASS_NAMES,
+                                    result['class_ids'], self._class_names,
                                     result['scores'], ax=axes,
                                     class_colors=self._class_colors)
         fig.tight_layout()
