@@ -28,11 +28,6 @@ class MaskRCNNNode(object):
     def __init__(self):
         self._cv_bridge = CvBridge()
 
-        cameraNode = rospy.get_param('~input','/no_camera_node')
-        if len(cameraNode) == 0 or cameraNode == '/no_camera_node':
-            rospy.logerr("No Camera node inputted")
-            exit(1)
-            
         config = InferenceConfig()
         config.display()
 
@@ -61,18 +56,8 @@ class MaskRCNNNode(object):
 
         self._publish_rate = rospy.get_param('~publish_rate', 100)
 
-    def run(self):
-        self._result_pub = rospy.Publisher('~result', Result, queue_size=1)
-        vis_pub = rospy.Publisher('~visualization', Image, queue_size=1)
-        cameraNode = rospy.get_param("~input","/no_camera_node")
-        if len(cameraNode) == 0 or cameraNode == '/no_camera_node':
-            rospy.logerr("No Camera node inputted")
-            exit(1)
-        else :
-            rospy.loginfo("Camera node is on "+ cameraNode)
-        sub = rospy.Subscriber(cameraNode, Image,
-                               self._image_callback, queue_size=1)
 
+    def run(self):
         rate = rospy.Rate(self._publish_rate)
         while not rospy.is_shutdown():
             if self._msg_lock.acquire(False):
