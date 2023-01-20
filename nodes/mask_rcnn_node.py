@@ -39,9 +39,6 @@ class MaskRCNNNode(object):
                                         config=config)
         # Load weights trained on MS-COCO
         model_path = resource_retriever.get_filename(rospy.get_param('~weight_location'), use_protocol=False)
-        # Download COCO trained weights from Releases if needed
-        if model_path == COCO_MODEL_PATH and not os.path.exists(COCO_MODEL_PATH):
-            utils.download_trained_weights(COCO_MODEL_PATH)
 
         rospy.loginfo("Loading pretrained model into memory")
         self._model.load_weights(model_path, by_name=True)
