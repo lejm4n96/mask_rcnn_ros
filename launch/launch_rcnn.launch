@@ -1,13 +1,7 @@
 <launch>
+  <arg name="config" default="$(find mask_rcnn_ros)/config/mask_rcnn.yaml" doc="Path to parameter config file"/>
 
-  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
-  <arg name="cameraTopic" default="/camera/rgb/image_color"/>
-
-  <arg name="weight_location" default="/root/.ros/mask_rcnn_coco.h5"/>
-  
-  <node name="mask_rcnn_node" pkg="mask_rcnn_ros" type="mask_rcnn_node.py" respawn="true" output="screen">
-    <param name="~weight_location" value="$(arg weight_location)"/>
-    <param name="~input" value="$(arg cameraTopic)"/>
+    <rosparam file="$(arg config)"/>
   </node>
   
 </launch>
