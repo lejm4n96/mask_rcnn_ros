@@ -113,10 +113,10 @@ class MaskRCNNNode(object):
         result_msg.header = msg.header
         for i, (y1, x1, y2, x2) in enumerate(result['rois']):
             box = RegionOfInterest()
-            box.x_offset = np.asscalar(x1)
-            box.y_offset = np.asscalar(y1)
-            box.height = np.asscalar(y2 - y1)
-            box.width = np.asscalar(x2 - x1)
+            box.x_offset = x1.item()
+            box.y_offset = y1.item()
+            box.height = (y2 - y1).item()
+            box.width = (x2 - x1).item()
             result_msg.boxes.append(box)
 
             class_id = result['class_ids'][i]
@@ -152,7 +152,7 @@ class MaskRCNNNode(object):
                                     class_colors=self._class_colors)
         fig.tight_layout()
         canvas.draw()
-        result = np.fromstring(canvas.tostring_rgb(), dtype='uint8')
+        result = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
 
         _, _, w, h = fig.bbox.bounds
         result = result.reshape((int(h), int(w), 3))
