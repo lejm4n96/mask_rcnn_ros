@@ -1,9 +1,11 @@
 <launch>
   <arg name="config" default="$(find mask_rcnn_ros)/config/mask_rcnn.yaml" doc="Path to parameter config file"/>
+  <arg name="topic_camera" default="color/image_raw" />
+  <arg name="ns" default="camera" />
 
-  <node name="mask_rcnn_node" pkg="mask_rcnn_ros" type="mask_rcnn_node.py" output="screen" clear_params="true" ns="camera">
+  <node name="mask_rcnn_node" pkg="mask_rcnn_ros" type="mask_rcnn_node.py" output="screen" clear_params="true" ns="$(arg ns)">
     <rosparam file="$(arg config)"/>
-    <remap from="~cameraTopic"  to="color/image_raw" />
+    <remap from="~cameraTopic"  to="$(arg topic_camera)"/>
   </node>
   
 </launch>
