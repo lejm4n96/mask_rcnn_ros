@@ -7,6 +7,7 @@ import cv2
 from cv_bridge import CvBridge
 import rospy
 from sensor_msgs.msg import Image
+from std_msgs.msg import Int64MultiArray
 from sensor_msgs.msg import RegionOfInterest
 
 from mask_rcnn_ros.mrcnn.config import Config
@@ -128,14 +129,11 @@ class MaskRCNNNode(object):
             score = result['scores'][i]
             result_msg.scores.append(score)
 
-            mask = Image()
-            mask.header = msg.header
-            mask.height = result['masks'].shape[0]
-            mask.width = result['masks'].shape[1]
-            mask.encoding = "mono8"
-            mask.is_bigendian = False
-            mask.step = mask.width
-            mask.data = (result['masks'][:, :, i] * 255).tobytes()
+            mask = Int64MultiArray()
+            mask_msg = np.zeros(result['masks'].shape[:2], np.int64)
+            mask_msg[result['masks'][:,:,i]==True] = np.int64(class_id)
+            mask_msg_list = mask_msg.tolist()
+            mask.data = [item for sublist in mask_msg_list for item in sublist]
             result_msg.masks.append(mask)
         return result_msg
 

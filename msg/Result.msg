@@ -12,6 +12,5 @@ string[] class_names
 # Float probability scores of the class_id
 float32[] scores
 
-# Instance masks as Image
-sensor_msgs/Image[] masks
-
+# Instance masks as MultiArray
+std_msgs/Int64MultiArray[] masks
