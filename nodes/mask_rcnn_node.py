@@ -87,7 +87,10 @@ class MaskRCNNNode(object):
                 self._last_msg = None
                 self._msg_lock.release()
             else:
-                rate.sleep()
+                try:
+                    rate.sleep()
+                except rospy.exceptions.ROSTimeMovedBackwardsException:
+                    pass
                 continue
 
             if msg is not None:
@@ -107,7 +110,10 @@ class MaskRCNNNode(object):
                     image_msg = self._cv_bridge.cv2_to_imgmsg(cv_result, 'bgr8')
                     self._vis_pub.publish(image_msg)
 
-            rate.sleep()
+            try:
+                rate.sleep()
+            except rospy.exceptions.ROSTimeMovedBackwardsException:
+                pass
 
     def _build_result_msg(self, msg, result):
         result_msg = Result()
