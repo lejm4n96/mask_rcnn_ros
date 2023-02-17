@@ -19,7 +19,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from skimage.measure import find_contours
-
+from skimage.transform import resize
 
 class InferenceConfig(Config):
     # Set batch size to 1 since we'll be running inference on
@@ -39,6 +39,7 @@ class MaskRCNNNode(object):
         config.display()
 
         self._visualization = rospy.get_param('~visualization', True)
+        self._visualization_scale = rospy.get_param('~visualization_scale', 1.0)
 
 
         # Create model object in inference mode.
@@ -108,7 +109,7 @@ class MaskRCNNNode(object):
 
                 # Visualize results
                 if self._visualization:
-                    vis_image = self._visualize(result, np_image)
+                    vis_image = self._visualize(result, np_image, self._visualization_scale)
                     cv_result = np.zeros(shape=vis_image.shape, dtype=np.uint8)
                     cv2.convertScaleAbs(vis_image, cv_result)
                     image_msg = self._cv_bridge.cv2_to_imgmsg(cv_result, 'bgr8')
@@ -148,13 +149,28 @@ class MaskRCNNNode(object):
             result_msg.masks.append(mask)
         return result_msg
 
-    def _visualize(self, result, image):
+    def _visualize(self, result, image, scale_factor=1.0):
         from matplotlib.backends.backend_agg import FigureCanvasAgg
         from matplotlib.figure import Figure
 
+        # scale input image and masks
+        result_resized = result
+        height, width = image.shape[:2]
+        dim = (int(scale_factor * width), int(scale_factor * height))
+        image_resized = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
+        masks = result['masks']
+        masks_resized = np.zeros(shape=(dim[1], dim[0], masks.shape[-1]), dtype=masks.dtype)
+        for i in range(masks.shape[-1]):
+            mask = masks[:, :, i]
+            masks_resized[:, :, i] = resize(mask, (dim[1], dim[0]), anti_aliasing=False)
+
+        result_resized['masks'] = masks_resized
+        result_resized['rois'] = scale_factor * result['rois']
+
+        # Compute dpi
         dpi = mpl.rcParams['figure.dpi']
         default_height = plt.rcParams['figure.figsize'][1]   # default figure height (4.8 inches)
-        height, width = image.shape[:2]
+        height, width = image_resized.shape[:2]
 
         # Adjust dpi to preserve original image size. This also scales fonts appropriately.
         # This formula works out because height is in pixels (dots) and default_height is in inches,
@@ -169,16 +185,16 @@ class MaskRCNNNode(object):
         ax = fig.add_axes([0, 0, 1, 1])
 
         canvas = FigureCanvasAgg(fig)
-        display_instances(image, result['rois'], result['masks'],
-                          result['class_ids'], self._class_names,
-                          result['scores'], ax=ax)
+        display_instances(image_resized, result_resized['rois'], result_resized['masks'],
+                          result_resized['class_ids'], self._class_names,
+                          result_resized['scores'], ax=ax)
         fig.tight_layout()
         canvas.draw()
-        result = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
+        output_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
 
         _, _, w, h = fig.bbox.bounds
-        result = result.reshape((int(h), int(w), 3))
-        return result
+        output_image = output_image.reshape((int(h), int(w), 3))
+        return output_image
 
     def _image_callback(self, msg):
         rospy.logdebug("Get an image")
