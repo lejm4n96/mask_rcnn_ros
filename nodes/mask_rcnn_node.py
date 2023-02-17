@@ -56,8 +56,6 @@ class MaskRCNNNode(object):
         self._last_msg = None
         self._msg_lock = threading.Lock()
 
-        self._class_colors = visualize.random_colors(len(self._class_names))
-
         self._publish_rate = rospy.get_param('~publish_rate', 100)
 
         # Start ROS publishers
@@ -173,8 +171,7 @@ class MaskRCNNNode(object):
         canvas = FigureCanvasAgg(fig)
         display_instances(image, result['rois'], result['masks'],
                           result['class_ids'], self._class_names,
-                          result['scores'], ax=ax,
-                          colors=self._class_colors)
+                          result['scores'], ax=ax)
         fig.tight_layout()
         canvas.draw()
         result = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
