@@ -114,6 +114,7 @@ class MaskRCNNNode(object):
                     cv_result = np.zeros(shape=vis_image.shape, dtype=np.uint8)
                     cv2.convertScaleAbs(vis_image, cv_result)
                     image_msg = self._cv_bridge.cv2_to_imgmsg(cv_result, 'bgr8')
+                    image_msg.header = msg.header
                     self._vis_pub.publish(image_msg)
 
             try:
