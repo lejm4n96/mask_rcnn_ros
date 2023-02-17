@@ -17,14 +17,14 @@ generate_messages(
 
 
 
-catkin_package(CATKIN_DEPENDS message_runtime)
+catkin_package(CATKIN_DEPENDS message_runtime sensor_msgs std_msgs)
 
 #############
 ## Install ##
 #############
 
 install(PROGRAMS
-  nodes/mask_rcnn_node
+  nodes/mask_rcnn_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
