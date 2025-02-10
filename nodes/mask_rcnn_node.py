@@ -125,6 +125,12 @@ class MaskRCNNNode(object):
         result_msg = Result()
         result_msg.header = msg.header
         for i, (y1, x1, y2, x2) in enumerate(result['rois']):
+            class_id = result['class_ids'][i]
+            class_name = self._class_names[class_id]
+
+            if class_name != "boat":
+                continue
+
             box = RegionOfInterest()
             box.x_offset = x1.item()
             box.y_offset = y1.item()
@@ -132,10 +138,7 @@ class MaskRCNNNode(object):
             box.width = (x2 - x1).item()
             result_msg.boxes.append(box)
 
-            class_id = result['class_ids'][i]
             result_msg.class_ids.append(class_id)
-
-            class_name = self._class_names[class_id]
             result_msg.class_names.append(class_name)
 
             score = result['scores'][i]
@@ -153,19 +156,34 @@ class MaskRCNNNode(object):
         from matplotlib.backends.backend_agg import FigureCanvasAgg
         from matplotlib.figure import Figure
 
+        boat_indices = [i for i, class_id in enumerate(result['class_ids']) 
+                   if self._class_names[class_id] == "boat"]
+        
+        # Create filtered copy of results
+        filtered_result = {
+            'rois': result['rois'][boat_indices],
+            'masks': result['masks'][:, :, boat_indices],
+            'class_ids': result['class_ids'][boat_indices],
+            'scores': result['scores'][boat_indices]
+        }
+
         # scale input image and masks
-        result_resized = result
+        result_resized = filtered_result
         height, width = image.shape[:2]
         dim = (int(scale_factor * width), int(scale_factor * height))
         image_resized = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
-        masks = result['masks']
-        masks_resized = np.zeros(shape=(dim[1], dim[0], masks.shape[-1]), dtype=masks.dtype)
-        for i in range(masks.shape[-1]):
-            mask = masks[:, :, i]
-            masks_resized[:, :, i] = resize(mask, (dim[1], dim[0]), anti_aliasing=False)
 
-        result_resized['masks'] = masks_resized
-        result_resized['rois'] = scale_factor * result['rois']
+        if filtered_result['masks'].size > 0:
+            masks = filtered_result['masks']
+            masks_resized = np.zeros(shape=(dim[1], dim[0], masks.shape[-1]), dtype=masks.dtype)
+            for i in range(masks.shape[-1]):
+                mask = masks[:, :, i]
+                masks_resized[:, :, i] = resize(mask, (dim[1], dim[0]), anti_aliasing=False)
+            result_resized['masks'] = masks_resized
+        else:
+            result_resized['masks'] = np.empty((0, 0, 0))
+
+        result_resized['rois'] = scale_factor * filtered_result['rois']
 
         # Compute dpi
         dpi = mpl.rcParams['figure.dpi']
@@ -185,9 +203,16 @@ class MaskRCNNNode(object):
         ax = fig.add_axes([0, 0, 1, 1])
 
         canvas = FigureCanvasAgg(fig)
-        display_instances(image_resized, result_resized['rois'], result_resized['masks'],
-                          result_resized['class_ids'], self._class_names,
-                          result_resized['scores'], ax=ax)
+        display_instances(
+            image_resized,
+            result_resized['rois'],
+            result_resized['masks'],
+            result_resized['class_ids'],
+            self._class_names,
+            result_resized['scores'],
+            ax=ax
+        )
+
         fig.tight_layout()
         canvas.draw()
         output_image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
