@@ -7,7 +7,7 @@ import cv2
 from cv_bridge import CvBridge
 import rospy
 from sensor_msgs.msg import Image
-from std_msgs.msg import Int64MultiArray
+from std_msgs.msg import Int64MultiArray, MultiArrayDimension
 from sensor_msgs.msg import RegionOfInterest
 
 from mask_rcnn_ros.mrcnn.config import Config
@@ -124,6 +124,9 @@ class MaskRCNNNode(object):
     def _build_result_msg(self, msg, result):
         result_msg = Result()
         result_msg.header = msg.header
+
+        mask_height, mask_width = result['masks'].shape[:2]
+
         for i, (y1, x1, y2, x2) in enumerate(result['rois']):
             class_id = result['class_ids'][i]
             class_name = self._class_names[class_id]
@@ -145,10 +148,15 @@ class MaskRCNNNode(object):
             result_msg.scores.append(score)
 
             mask = Int64MultiArray()
-            mask_msg = np.zeros(result['masks'].shape[:2], np.int64)
-            mask_msg[result['masks'][:,:,i]==True] = np.int64(class_id)
-            mask_msg_list = mask_msg.tolist()
-            mask.data = [item for sublist in mask_msg_list for item in sublist]
+
+            mask.layout.dim.append(MultiArrayDimension(label="height", size=mask_height, stride=mask_height * mask_width))
+            mask.layout.dim.append(MultiArrayDimension(label="width", size=mask_width, stride=mask_width))
+            mask.layout.data_offset = 0 
+
+            mask_np_for_msg = np.zeros((mask_height, mask_width), np.int64)
+            mask_np_for_msg[result['masks'][:,:,i]==True] = np.int64(class_id)
+
+            mask.data = mask_np_for_msg.flatten().tolist()
             result_msg.masks.append(mask)
         return result_msg
 
